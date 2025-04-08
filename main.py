@@ -150,8 +150,8 @@ def spotify_now_playing(loop: bool = False):
             "album_cover": item["album"]["images"][0]["url"],
             "song_url": item["external_urls"]["spotify"],
             "duration": strftime("%M:%S", gmtime(item["duration_ms"] / 1000)),
-            "progress": strftime("%M:%S", gmtime(json["progress_ms"] / 1000)),
-            "%": json["progress_ms"] * 100 / item["duration_ms"],
+            "current": strftime("%M:%S", gmtime(json["progress_ms"] / 1000)),
+            "progress": json["progress_ms"] * 100 / item["duration_ms"],
         }
     return {"is_playing": False}
 
