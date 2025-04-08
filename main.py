@@ -15,6 +15,8 @@ app = FastAPI()
 
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"),
+    username=os.getenv("REDIS_USER", None),
+    password=os.getenv("REDIS_PASSWORD", None),
     port=int(os.getenv("REDIS_PORT", 6379)),
     db=int(os.getenv("REDIS_DB", 0)),
 )
