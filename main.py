@@ -7,9 +7,11 @@ from requests import Session, get
 import base64
 from time import strftime, gmtime
 
+
 def random_string(length: int):
     characters = string.ascii_letters + string.digits
-    return ''.join(random.choice(characters) for i in range(length))
+    return "".join(random.choice(characters) for i in range(length))
+
 
 app = FastAPI()
 
@@ -25,6 +27,7 @@ redis_client = redis.Redis(
 CLIENT_ID = "edd1c43c4cd64d388768eeea6718a15f"
 REDIRECT_URI = "http://localhost:8000/spotify_api/callback"
 
+
 @app.get("/requests")
 def requests():
     x = redis_client.incr("request_count")
@@ -33,10 +36,13 @@ def requests():
 
 SPOTIFY_API_AUTHORIZE_TOKEN = random_string(16)
 
+
 @app.get("/spotify_api/authorize")
 def spotify_api_authorize(token: str):
-    if (token != SPOTIFY_API_AUTHORIZE_TOKEN):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    if token != SPOTIFY_API_AUTHORIZE_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized"
+        )
 
     return {
         "url": f"https://accounts.spotify.com/authorize?response_type=code&client_id={os.getenv('CLIENT_ID', CLIENT_ID)}&scope=user-read-currently-playing&redirect_uri={os.getenv('REDIRECT_URI', REDIRECT_URI)}"
@@ -129,6 +135,9 @@ def spotify_now_playing(loop: bool = False):
         spotify_refresh_token()
         return spotify_now_playing(True)
 
+    if resp.content.decode() == "":
+        return {"is_playing": False}
+
     json = resp.json()
 
     if resp.status_code == 200:
@@ -146,4 +155,7 @@ def spotify_now_playing(loop: bool = False):
         }
     return {"is_playing": False}
 
-print(f"To authorize with Spotify, please pass the string \"{SPOTIFY_API_AUTHORIZE_TOKEN}\" as a query parameter called \"token\" to the /spotify_api/authorize endpoint.")
+
+print(
+    f'To authorize with Spotify, please pass the string "{SPOTIFY_API_AUTHORIZE_TOKEN}" as a query parameter called "token" to the /spotify_api/authorize endpoint.'
+)
