@@ -2,6 +2,7 @@ import os
 import random
 import string
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 import redis
 from requests import Session, get
 import base64
@@ -14,6 +15,20 @@ def random_string(length: int):
 
 
 app = FastAPI()
+
+origins = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    os.getenv("ORIGIN_URI", "https://elocity-dev.tadam.space")
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"),
