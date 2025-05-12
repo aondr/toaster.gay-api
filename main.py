@@ -89,6 +89,7 @@ def spotify_api_callback(code: str):
     resp = s.post("https://accounts.spotify.com/api/token", headers=headers, data=body)
 
     if resp.status_code != 200:
+        print(resp.content)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="spotify api returned a non-OK status code",
@@ -120,6 +121,7 @@ def spotify_refresh_token():
     resp = s.post("https://accounts.spotify.com/api/token", headers=headers, data=body)
 
     if resp.status_code != 200:
+        print(resp.content)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="spotify api returned a non-OK status code",
@@ -143,6 +145,7 @@ def spotify_now_playing(loop: bool = False):
 
     if resp.status_code == 401 or resp.status_code == 403:
         if loop:
+            print(resp.content)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="spotify api returned a non-OK status code",
