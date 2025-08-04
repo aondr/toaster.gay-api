@@ -1,0 +1,41 @@
+services:
+  redis:
+    image: redis:${REDIS_VERSION:-latest}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?Redis password is required}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - ${REDIS_DATA_DIR:-./data}:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--raw", "incr", "ping" ]
+      interval: 2s
+      timeout: 10s
+      retries: 20
+    networks:
+      - mwapi-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aondr/toaster.gay-api:${API_VERSION:-latest}
+    ports:
+      - "${API_PORT:-8000}:80"
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?Redis password is required}
+      - REDIS_DB=${REDIS_DB:-0}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:?Spotify client ID is required}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:?Spotify client secret is required}
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mwapi-net
+
+networks:
+  mwapi-net:
+    name: mwapi-net
+    driver: bridge

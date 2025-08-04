@@ -32,15 +32,19 @@ app.add_middleware(
 
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"),
-    username=os.getenv("REDIS_USER", None),
     password=os.getenv("REDIS_PASSWORD", None),
     port=int(os.getenv("REDIS_PORT", 6379)),
     db=int(os.getenv("REDIS_DB", 0)),
 )
 
-# override here or using env variables
-CLIENT_ID = "edd1c43c4cd64d388768eeea6718a15f"
-REDIRECT_URI = "http://localhost:8000/spotify_api/callback"
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+if SPOTIFY_CLIENT_ID is None:
+    raise ValueError("SPOTIFY_CLIENT_ID environment variable is not set")
+
+REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8000/spotify_api/callback")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+if SPOTIFY_CLIENT_SECRET is None:
+    raise ValueError("SPOTIFY_CLIENT_SECRET environment variable is not set")
 
 
 @app.get("/requests")
@@ -49,7 +53,7 @@ def requests():
     return {"requests": x}
 
 
-SPOTIFY_API_AUTHORIZE_TOKEN = random_string(16)
+SPOTIFY_API_AUTHORIZE_TOKEN = random_string(32)
 
 
 @app.get("/spotify_api/authorize")
@@ -60,7 +64,7 @@ def spotify_api_authorize(token: str):
         )
 
     return {
-        "url": f"https://accounts.spotify.com/authorize?response_type=code&client_id={os.getenv('CLIENT_ID', CLIENT_ID)}&scope=user-read-currently-playing&redirect_uri={os.getenv('REDIRECT_URI', REDIRECT_URI)}"
+        "url": f"https://accounts.spotify.com/authorize?response_type=code&client_id={os.getenv('CLIENT_ID', SPOTIFY_CLIENT_ID)}&scope=user-read-currently-playing&redirect_uri={os.getenv('REDIRECT_URI', REDIRECT_URI)}"
     }
 
 
@@ -72,13 +76,13 @@ def spotify_api_callback(code: str):
     body = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": os.getenv("REDIRECT_URI", REDIRECT_URI),
+        "redirect_uri": REDIRECT_URI,
     }
     headers = {
         "Authorization": "Basic "
         + base64.b64encode(
             str.encode(
-                os.getenv("CLIENT_ID", CLIENT_ID) + ":" + os.getenv("CLIENT_SECRET")
+                str(SPOTIFY_CLIENT_ID) + ":" + str(SPOTIFY_CLIENT_SECRET)
             )
         ).decode(),
         "Content-Type": "application/x-www-form-urlencoded",
@@ -110,7 +114,7 @@ def spotify_refresh_token():
         "Authorization": "Basic "
         + base64.b64encode(
             str.encode(
-                os.getenv("CLIENT_ID", CLIENT_ID) + ":" + os.getenv("CLIENT_SECRET")
+                str(SPOTIFY_CLIENT_ID) + ":" + str(SPOTIFY_CLIENT_SECRET)
             )
         ).decode(),
         "Content-Type": "application/x-www-form-urlencoded",
@@ -133,12 +137,12 @@ def spotify_refresh_token():
 
 
 @app.get("/spotify_api/now_playing")
-def spotify_now_playing(loop: bool = False):
+async def spotify_now_playing(loop: bool = False):
     resp = get(
         "https://api.spotify.com/v1/me/player/currently-playing",
         headers={
             "Authorization": "Bearer "
-            + redis_client.get("spotify_access_token").decode()
+            + redis_client.get("spotify_access_token").decode("utf-8")
         },
     )
 
