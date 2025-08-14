@@ -28,6 +28,8 @@ services:
       - REDIS_DB=${REDIS_DB:-0}
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:?Spotify client ID is required}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:?Spotify client secret is required}
+      - REDIRECT_URI=${REDIRECT_URI:-http://localhost:8000/callback}
+      - ORIGIN_URI=${ORIGIN_URI:-http://localhost:80}
     restart: unless-stopped
     depends_on:
       redis:
